@@ -13,8 +13,8 @@ struct AnswerResponse {
     struct AnswersOfQuestion: Codable {
         let answerInfos: [AnswerInfos] // 답변 리스트
         
-        struct AnswerInfos: Codable, Hashable {
-            let profileImage: String // 프로필 이미지 URL
+        struct AnswerInfos: Codable & Hashable {
+            let profileImage: String? // 프로필 이미지 URL
             let nickname: String // 닉네임
             let content: String // 답변 내용
             let tags: String // 키워드

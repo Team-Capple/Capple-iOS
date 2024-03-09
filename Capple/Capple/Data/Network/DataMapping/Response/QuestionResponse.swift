@@ -24,4 +24,11 @@ struct QuestionResponse {
             var commentCount: Int?
         }
     }
+    
+    /// 메인 질문 조회 Response
+    struct MainQuestion: Codable {
+        let questionId: Int
+        let questionStatus: String
+        let content: String
+    }
 }

@@ -14,9 +14,9 @@ class NetworkManager: ObservableObject {
 // MARK: - 질문 API
 extension NetworkManager {
     
-    /// 오늘의 메인 질문을 조회합니다.
+    /// 전체 질문 리스트를 조회합니다.
     @MainActor
-    static func fetchMainQuestions() async throws -> QuestionResponse.Questions {
+    static func fetchAllQuestions() async throws -> QuestionResponse.Questions {
         
         // URL 객체 생성
         let urlString = ApiEndpoints.basicURLString(path: .questions)
@@ -41,24 +41,19 @@ extension NetworkManager {
         let decoder = JSONDecoder()
         do {
             let decodeData = try decoder.decode(BaseResponse<QuestionResponse.Questions>.self, from: data)
-            print("QuestionResponse.MainQuestions: \(decodeData.result)")
+            // print("QuestionResponse.MainQuestions: \(decodeData.result)")
             return decodeData.result
         } catch {
             print("Decode 에러")
             throw NetworkError.decodeFailed
         }
     }
-}
-
-// MARK: - 답변 API
-extension NetworkManager {
     
-    /// 특정 질문에 대한 답변을 조회합니다.
-    @MainActor
-    static func fetchAnswersOfQuestion(request: AnswerRequest.AnswersOfQuestion) async throws -> AnswerResponse.AnswersOfQuestion {
+    /// 오늘의 메인 질문을 조회합니다.
+    static func fetchMainQuestions() async throws -> QuestionResponse.MainQuestion {
         
         // URL 객체 생성
-        let urlString = ApiEndpoints.basicURLString(path: .answersOfQuestion) + "/\(request.questionId)?" + "keyword=\(request.keyword ?? "")&size=\(request.size ?? 10)"
+        let urlString = ApiEndpoints.basicURLString(path: .mainQuestion)
         guard let url = URL(string: urlString) else {
             print("Error: cannotCreateURL")
             throw NetworkError.cannotCreateURL
@@ -78,9 +73,52 @@ extension NetworkManager {
         
         // 디코딩
         let decoder = JSONDecoder()
-        let decodeData = try decoder.decode(BaseResponse<AnswerResponse.AnswersOfQuestion>.self, from: data)
-        print("AnswerResponse.AnswersOfQuestion: \(decodeData.result)")
-        return decodeData.result
+        do {
+            let decodeData = try decoder.decode(BaseResponse<QuestionResponse.MainQuestion>.self, from: data)
+            print("QuestionResponse.MainQuestion: \(decodeData.result)")
+            return decodeData.result
+        } catch {
+            print("Decode 에러")
+            throw NetworkError.decodeFailed
+        }
+    }
+}
+
+// MARK: - 답변 API
+extension NetworkManager {
+    
+    /// 특정 질문에 대한 답변을 조회합니다.
+    static func fetchAnswersOfQuestion(request: AnswerRequest.AnswersOfQuestion) async throws -> AnswerResponse.AnswersOfQuestion {
+        
+        // URL 객체 생성
+        let urlString = ApiEndpoints.basicURLString(path: .answersOfQuestion) + "/\(request.questionId)"
+        guard let url = URL(string: urlString) else {
+            print("Error: cannotCreateURL")
+            throw NetworkError.cannotCreateURL
+        }
+        
+        // URLSession 생성
+        let (data, response) = try await URLSession.shared.data(from: url)
+        // print(data)
+        // print(response)
+        
+        // 에러 체크
+        if let response = response as? HTTPURLResponse,
+           !(200..<300).contains(response.statusCode) {
+            print("Error: badRequest")
+            throw NetworkError.badRequest
+        }
+        
+        // 디코딩
+        let decoder = JSONDecoder()
+        do {
+            let decodeData = try decoder.decode(BaseResponse<AnswerResponse.AnswersOfQuestion>.self, from: data)
+            // print("AnswerResponse.AnswersOfQuestion: \(decodeData.result)")
+            return decodeData.result
+        } catch {
+            print("Decode 에러")
+            throw NetworkError.decodeFailed
+        }
     }
 }
 

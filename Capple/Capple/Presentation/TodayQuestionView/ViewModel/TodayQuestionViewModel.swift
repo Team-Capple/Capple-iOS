@@ -18,7 +18,7 @@ final class TodayQuestionViewModel: ObservableObject {
     var timer: Timer?
     
     // TODO: - 임시 답변 리스트
-    @Published var mainQuestion: QuestionResponse.Questions
+    @Published var mainQuestion: QuestionResponse.MainQuestion
     @Published var answerList: [AnswerResponse.AnswersOfQuestion.AnswerInfos]
     
     init() {
@@ -26,8 +26,8 @@ final class TodayQuestionViewModel: ObservableObject {
         self.timeZone = currentTimeZone
         self.timerSeconds = dateManager.fetchTimerSeconds(currentTimeZone)
         
-        self.state = .ready
-        
+        // 상태 별 테스트
+        self.state = .creating
 //        if currentTimeZone == .am || currentTimeZone == .pm {
 //            // TODO: - 답변 작성 전 = ready, 답변 작성 후 = complete
 //            self.state = .ready
@@ -36,12 +36,14 @@ final class TodayQuestionViewModel: ObservableObject {
 //        }
         
         // 변수 초기화
-        self.mainQuestion = .init(questionInfos: [])
+        self.mainQuestion = .init(questionId: 1, questionStatus: "LIVE", content: "내용입니당")
         self.answerList = []
         
         // 데이터 패치
-        // self.fetchMainQuestion()
-        // self.fetchAnswersOfMainQuestion()
+        Task {
+            await fetchMainQuestion()
+            await fetchAnswersOfMainQuestion()
+        }
     }
 }
 
@@ -49,6 +51,7 @@ final class TodayQuestionViewModel: ObservableObject {
 extension TodayQuestionViewModel {
     
     /// 메인 질문을 업데이트합니다.
+    @MainActor
     func fetchMainQuestion() {
         Task {
             let mainQuestion = try await NetworkManager.fetchMainQuestions()
@@ -61,10 +64,11 @@ extension TodayQuestionViewModel {
 extension TodayQuestionViewModel {
     
     /// 메인 질문에 대한 답변 3개를 업데이트 받습니다.
+    @MainActor
     func fetchAnswersOfMainQuestion() {
         Task {
-//            let answers = try await NetworkManager.fetchAnswersOfQuestion(request: .init(questionId: mainQuestion.questionId, keyword: "", size: 3))
-            // self.answerList = answers.answerInfos
+            let answers = try await NetworkManager.fetchAnswersOfQuestion(request: .init(questionId: mainQuestion.questionId, keyword: "", size: 3))
+            self.answerList = answers.answerInfos
         }
     }
 }
@@ -98,7 +102,7 @@ extension TodayQuestionViewModel {
         var questionMark = AttributedString("Q. ")
         questionMark.foregroundColor = BrandPink.text
         
-        let creatingText = AttributedString("질문 테스트")
+        let creatingText = AttributedString(mainQuestion.content)
         let completeText: AttributedString = "최근에 먹었던 음식 중\n가장 인상깊었던 것은 무엇인가요?"
         
         var text = AttributedString()

@@ -69,7 +69,7 @@ class QuestionViewModel: ObservableObject {
                        let decodedData = try JSONDecoder().decode(BaseResponse<QuestionResponse.Questions>.self, from: data)
                        DispatchQueue.main.async {
                            self.questions = decodedData.result.questionInfos ?? []
-                                  print("Decoded data: \(self.questions)")
+                                  // print("Decoded data: \(self.questions)")
                            self.questions.append(contentsOf: self.questions)
                          
                        }

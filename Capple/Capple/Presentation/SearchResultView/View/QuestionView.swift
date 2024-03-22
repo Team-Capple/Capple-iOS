@@ -13,59 +13,44 @@ struct QuestionView: View {
     let seeMoreAction: () -> Void
     var questionStatus: String = ""
     
-    // MARK: - 타임존, 데이트
-    func getAmPmFromDateString(_ dateString: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" // 입력 문자열 형식
-        formatter.timeZone = TimeZone(abbreviation: "UTC") // API 시간대 (UTC)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        
-        let outputFormatter = DateFormatter()
-        outputFormatter.dateFormat = "a" // '오전' 또는 '오후' 표시
-        outputFormatter.timeZone = TimeZone(abbreviation: "KST") // 한국 시간대
-        outputFormatter.locale = Locale(identifier: "ko_KR") // 한국어 설정
-        
-        if let date = formatter.date(from: dateString) {
-            return outputFormatter.string(from: date) // '오전' 또는 '오후'
-        } else {
-            return "시간 변환 실패"
-        }
-    }
-    
-    func stringToDate(_ dateString: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss" // 날짜 형식은 입력되는 문자열 형식에 맞춰야 합니다.
-        // formatter.locale = Locale(identifier: "en_US_POSIX") // ISO8601 등의 표준 형식을 처리하기 위해 권장
-        return formatter.date(from: dateString)
-    }
-    
+   
+   
     func formattedDate(from dateString: String) -> String {
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        isoFormatter.timeZone = TimeZone(secondsFromGMT: 0) // UTC로 설정
+        print(dateString, "비동기인가요?")
         
-        let outputFormatter = DateFormatter()
-        outputFormatter.dateFormat = "yyyy-MM-dd"
-        outputFormatter.timeZone = TimeZone.current // 현재 시스템 시간대 사용
+        let inputFormatter = DateFormatter()
+           inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+           
+           if let date = inputFormatter.date(from: dateString) {
+               let outputFormatter = DateFormatter()
+               outputFormatter.dateFormat = "yyyy-MM-dd"
+               return outputFormatter.string(from: date)
+           } else {
+               return "실패!" // 잘못된 입력 형식일 경우 처리
+           }
         
+    }
+    // MARK: - 오전/오후 시간표현
+
+    func getTimePeriod(from dateString: String) -> String? {
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        inputFormatter.locale = Locale(identifier: "ko_KR") // 한국 시간으로 설정
         
-        if let date = isoFormatter.date(from: dateString) {
-            return outputFormatter.string(from: date) // Return the formatted date string
-        } else {
+        if let date = inputFormatter.date(from: dateString) {
+            let calendar = Calendar.current
+            let hour = calendar.component(.hour, from: date)
             
-            let standardFormatter = DateFormatter()
-            standardFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss" // Handle strings without fractional seconds
-            standardFormatter.timeZone = TimeZone(abbreviation: "UTC") // Match the time zone used in your original strings if necessary
-            
-            if let date = standardFormatter.date(from: dateString) {
-                return outputFormatter.string(from: date)
+            // TODO: 로직 추가하기 (시간대에 맞추기)
+            if hour < 12 {
+                return "오전"
             } else {
-                return "날짜 변환 실패"
+                return "오후"
             }
+        } else {
+            return "잘못됨" // 잘못된 입력 형식일 경우 처리
         }
     }
-    
-    
     var questionStatusRawValue: String {
         switch questions.questionStatus {
         case .live:
@@ -84,6 +69,7 @@ struct QuestionView: View {
     }
     
     
+    
     //@State private var isLike = false
     //@State private var isComment = false
     
@@ -92,7 +78,8 @@ struct QuestionView: View {
         
         VStack(alignment: .leading) {
             HStack(alignment: .center) {
-                Text("\(questions.livedAt ?? "오전 질문" == QuestionTimeZone.am.rawValue || questions.livedAt ?? "오전 질문" == QuestionTimeZone.amCreate.rawValue ? "오전" : "오후")질문")
+                
+                Text("\(getTimePeriod(from: questions.livedAt ?? "default") ?? "오전")질문")
                     .font(.pretendard(.semiBold, size: 14))
                     .foregroundStyle(GrayScale.icon)
                 
@@ -106,6 +93,7 @@ struct QuestionView: View {
                 Spacer()
                     .frame(width: 4)
                 
+            
                 Text(formattedDate(from: questions.livedAt ?? "default"))
                     .font(.pretendard(.semiBold, size: 14))
                     .foregroundStyle(GrayScale.icon)
@@ -161,9 +149,9 @@ struct QuestionView: View {
                 Spacer()
                 
                 
-                if questions.isAnswered ?? false { // isAnswered가 true일 때만 표시
+                if questions.isAnswered == false { // isAnswered가 true일 때만 표시
                        Button {
-                           // TODO: 현희 누나봐주세요!!! (답변하기 뷰 이동)
+                           // TODO: 답변하기 뷰에서 id 까지 전달 => 제목 보여주기(정보는 있음)
                            pathModel.paths.append(.answer)
                        } label: {
                            Text("답변하기")
@@ -175,6 +163,7 @@ struct QuestionView: View {
                                .cornerRadius(30, corners: .allCorners)
                        }
                    }
+                
             }
             
             // MARK: - 좋아요, 댓글
